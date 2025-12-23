@@ -1,5 +1,5 @@
 {
-  "name": "@flipper/netscaler-mcp",
+  "name": "flipperagents-ns-mcp",
   "version": "0.1.0",
   "description": "MCP server for NetScaler ADC management",
   "main": "dist/index.js",

@@ -76,20 +76,27 @@ npm run dev
 
 ## User Installation
 
-Users install our MCP server and configure Claude Desktop:
+Clone and build the MCP server:
 
 ```bash
-npm install -g @flipper/netscaler-mcp
+git clone https://github.com/f5devcentral/flipperAgents.git
+cd flipperAgents/mcp/netscaler
+npm install
+npm run build
 ```
 
-Then add to Claude Desktop config (`~/.config/claude/claude_desktop_config.json`):
+Then add to Claude Desktop config:
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux:** `~/.config/claude/claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "netscaler": {
-      "command": "npx",
-      "args": ["@flipper/netscaler-mcp"],
+      "command": "node",
+      "args": ["/path/to/flipperAgents/mcp/netscaler/dist/index.js"],
       "env": {
         "NS_HOST": "10.1.1.100",
         "NS_USER": "nsroot",
@@ -100,6 +107,8 @@ Then add to Claude Desktop config (`~/.config/claude/claude_desktop_config.json`
   }
 }
 ```
+
+Replace `/path/to/flipperAgents` with the actual path where you cloned the repository.
 
 ## Environment Variables
 

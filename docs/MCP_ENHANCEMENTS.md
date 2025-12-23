@@ -7,7 +7,7 @@ Proposed enhancements for the NetScaler MCP server based on testing bren.ns.conf
 ## Status
 
 | Enhancement | Status | Notes |
-|-------------|--------|-------|
+| ------------- | -------- | ------- |
 | Config deduplication | ✅ Done | Line 186-188 in config-reorder.ts uses `Set` |
 | validate_config tool | ❌ Remaining | Pre-flight validation |
 | analyze_config exposure | ❌ Remaining | Function exists, not exposed as tool |
@@ -18,7 +18,7 @@ Proposed enhancements for the NetScaler MCP server based on testing bren.ns.conf
 ## Remaining Gaps
 
 | Gap | Impact |
-|-----|--------|
+| ----- | -------- |
 | No pre-flight validation | Errors discovered at deploy time |
 | No dry-run mode | Can't preview what will deploy |
 | analyze_config not exposed | Can't get config stats via MCP |
@@ -68,6 +68,7 @@ for (const group of groups) {
 ```
 
 **Checks to perform:**
+
 - Duplicate resource definitions
 - Services referencing non-existent servers
 - SSL bindings referencing non-existent certkeys
@@ -75,6 +76,7 @@ for (const group of groups) {
 - Syntax validation (balanced quotes, valid command structure)
 
 **Return format:**
+
 ```json
 {
   "valid": false,
@@ -151,7 +153,7 @@ Add `dry_run` parameter to existing `deploy_config` tool:
 **Tools implemented:**
 
 | Tool | Description |
-|------|-------------|
+| ------ | ------------- |
 | `create_system_backup` | Create full system backup (.tgz) including ns.conf, SSL certs/keys, custom monitors |
 | `list_system_backups` | List backups in /var/ns_sys_backup/ |
 | `download_system_backup` | Download backup file (base64 encoded) |
@@ -213,7 +215,7 @@ provision_test_certs: {
 ## Implementation Priority
 
 | Enhancement | Priority | Effort | Impact | Status |
-|-------------|----------|--------|--------|--------|
+| ------------- | ---------- | -------- | -------- | -------- |
 | Config deduplication | P1 | Low | High - fixes common failures | ✅ Done |
 | validate_config tool | P1 | Medium | High - catch errors early | ❌ Remaining |
 | dry_run mode | P2 | Low | Medium - debugging aid | ❌ Remaining |
@@ -226,7 +228,7 @@ provision_test_certs: {
 ## Files to Modify
 
 | File | Changes |
-|------|---------|
+| ------ | --------- |
 | `mcp/netscaler/src/lib/config-reorder.ts` | Add deduplication, export validation |
 | `mcp/netscaler/src/index.ts` | Add new tools, dry_run param |
 | `mcp/netscaler/src/lib/ssh-client.ts` | Add readFile(), listDir() for backup |

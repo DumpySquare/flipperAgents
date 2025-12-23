@@ -4,30 +4,29 @@ MCP (Model Context Protocol) server for managing NetScaler ADC via Claude Deskto
 
 ## Installation
 
-```bash
-npm install -g @flipper/netscaler-mcp
-```
-
-Or run directly with npx:
+Clone and build the project:
 
 ```bash
-npx @flipper/netscaler-mcp
+git clone https://github.com/f5devcentral/flipperAgents.git
+cd flipperAgents/mcp/netscaler
+npm install
+npm run build
 ```
 
 ## Configuration
 
 Add to your Claude Desktop configuration file:
 
-**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-**Linux:** `~/.config/claude/claude_desktop_config.json`
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux:** `~/.config/claude/claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "netscaler": {
-      "command": "npx",
-      "args": ["@flipper/netscaler-mcp"],
+      "command": "node",
+      "args": ["/path/to/flipperAgents/mcp/netscaler/dist/index.js"],
       "env": {
         "NS_HOST": "10.1.1.100",
         "NS_USER": "nsroot",
@@ -38,6 +37,8 @@ Add to your Claude Desktop configuration file:
   }
 }
 ```
+
+Replace `/path/to/flipperAgents` with the actual path where you cloned the repository.
 
 ## Environment Variables
 
@@ -104,6 +105,16 @@ npm run build
 # Run locally
 npm start
 ```
+
+## Feedback & Issues
+
+Report bugs or request features at: <https://github.com/f5devcentral/flipperAgents/issues>
+
+Please include:
+
+- NetScaler version
+- What you were trying to do
+- Any error messages
 
 ## License
 
