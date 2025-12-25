@@ -22,8 +22,13 @@ import {
 import { NitroClient } from './lib/nitro-client.js';
 import { SSHClient } from './lib/ssh-client.js';
 import { reorderConfig } from './lib/config-reorder.js';
-import { startHttpTransport, setToolHandler, setConnectionChecker } from './transports/http.js';
+import { startHttpTransport, setToolHandler, setConnectionChecker, setShutdownHandler } from './transports/http.js';
 import { log, logToolCall } from './lib/logger.js';
+import { TelemetryClient, classifyError, setupGlobalErrorHandlers } from '@flipper/telemetry';
+
+// Initialize telemetry (singleton)
+const telemetry = new TelemetryClient('flipperagents-ns-mcp', '0.1.0');
+setupGlobalErrorHandlers(telemetry);
 
 // Tool definitions
 const tools: Tool[] = [
@@ -1097,7 +1102,7 @@ async function clearApplicationConfig(client: NitroClient, ssh?: SSHClient): Pro
   await new Promise(resolve => setTimeout(resolve, 1000));
 }
 
-// Wrapper function with logging
+// Wrapper function with logging and telemetry
 async function handleToolCall(name: string, args: Record<string, unknown>): Promise<string> {
   const startTime = Date.now();
   log.info(`Tool call started: ${name}`, { tool: name, args: redactArgs(args) });
@@ -1106,11 +1111,13 @@ async function handleToolCall(name: string, args: Record<string, unknown>): Prom
     const result = await handleToolCallImpl(name, args);
     const durationMs = Date.now() - startTime;
     logToolCall(name, args, { success: true }, durationMs);
+    telemetry.capture(name, durationMs, true);
     return result;
   } catch (error) {
     const durationMs = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : String(error);
     logToolCall(name, args, { success: false, error: errorMsg }, durationMs);
+    telemetry.capture(name, durationMs, false, classifyError(error));
     throw error;
   }
 }
@@ -1128,7 +1135,7 @@ function redactArgs(args: Record<string, unknown>): Record<string, unknown> {
 function createServer(): Server {
   const server = new Server(
     {
-      name: 'netscaler-mcp',
+      name: 'flipperagents-ns-mcp',
       version: '0.1.0',
     },
     {
@@ -1178,6 +1185,13 @@ async function main(): Promise<void> {
       const result = await checkNetScalerConnection();
       return { nitro: result.nitro.ok, ssh: result.ssh.ok };
     });
+    // Register shutdown handler for telemetry capture
+    setShutdownHandler(async (reason: string) => {
+      log.info('Shutdown handler called', { reason });
+      telemetry.lifecycle('shutdown', { reason });
+      await telemetry.flush();
+    });
+    telemetry.lifecycle('startup', { transport: 'http', port: httpPort });
     startHttpTransport(server, httpPort);
   } else {
     // Default: stdio transport (for Claude Desktop)
@@ -1233,7 +1247,23 @@ async function main(): Promise<void> {
     log.debug('Connecting server to transport');
     await server.connect(transport);
     log.info('NetScaler MCP server started (stdio)', { pid: process.pid });
+    telemetry.lifecycle('startup', { transport: 'stdio' });
   }
 }
+
+// Shutdown handlers - capture lifecycle event before telemetry flushes
+process.on('SIGINT', async () => {
+  log.info('Received SIGINT, shutting down');
+  telemetry.lifecycle('shutdown', { reason: 'SIGINT' });
+  await telemetry.flush();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  log.info('Received SIGTERM, shutting down');
+  telemetry.lifecycle('shutdown', { reason: 'SIGTERM' });
+  await telemetry.flush();
+  process.exit(0);
+});
 
 main().catch(console.error);

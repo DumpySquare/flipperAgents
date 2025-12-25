@@ -25,19 +25,22 @@ add server web_server1 192.168.1.10
     expect(vserverPos).toBeLessThan(bindPos);
   });
 
-  it('should preserve comments', () => {
+  it('should strip comments for batch compatibility', () => {
     const input = `
 # This is a comment
 add server web1 192.168.1.10
     `.trim();
 
     const result = reorderConfig(input);
-    expect(result).toContain('# This is a comment');
+    // Comments are stripped for NetScaler batch command compatibility
+    expect(result).not.toContain('# This is a comment');
+    expect(result).toContain('add server web1 192.168.1.10');
   });
 
   it('should handle empty input', () => {
     const result = reorderConfig('');
-    expect(result).toContain('# Configuration reordered');
+    // Empty input returns empty output (no header comment for batch compatibility)
+    expect(result).toBe('');
   });
 
   it('should place set commands after add commands', () => {
@@ -55,7 +58,7 @@ add lb vserver web_vip HTTP 10.1.1.100 80
     expect(addPos).toBeLessThan(setPos);
   });
 
-  it('should place enable/disable commands last', () => {
+  it('should place enable ns feature first, other enable/disable last', () => {
     const input = `
 enable ns feature LB
 add server web1 192.168.1.10
@@ -66,10 +69,12 @@ disable lb vserver old_vip
     const lines = result.split('\n').filter(l => l.trim() && !l.startsWith('#'));
 
     const serverPos = lines.findIndex(l => l.includes('add server'));
-    const enablePos = lines.findIndex(l => l.includes('enable'));
+    const enableFeaturePos = lines.findIndex(l => l.includes('enable ns feature'));
     const disablePos = lines.findIndex(l => l.includes('disable'));
 
-    expect(serverPos).toBeLessThan(enablePos);
+    // enable ns feature should be first (before servers)
+    expect(enableFeaturePos).toBeLessThan(serverPos);
+    // disable vserver should be last (after servers)
     expect(serverPos).toBeLessThan(disablePos);
   });
 

@@ -1,6 +1,6 @@
-# F5 BIG-IP MCP Server
+# TMOS MCP Server (flipperagents-tmos-mcp)
 
-MCP (Model Context Protocol) server for managing F5 BIG-IP devices via Claude Desktop, Claude Code, or any MCP-compatible AI client.
+MCP (Model Context Protocol) server for managing F5 BIG-IP/TMOS devices via Claude Desktop, Claude Code, or any MCP-compatible AI client.
 
 ## Features
 
@@ -30,7 +30,7 @@ Add to your Claude Desktop config:
 ```json
 {
   "mcpServers": {
-    "f5-bigip": {
+    "tmos": {
       "command": "node",
       "args": ["/path/to/flipperAgents/mcp/f5/dist/index.js"],
       "env": {

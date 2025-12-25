@@ -4,13 +4,15 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "mcp/*"
   ],
   "scripts": {
     "build": "npm run build --workspaces",
     "clean": "npm run clean --workspaces",
-    "ns-agent": "npm run start --workspace=@flipper-agents/ns-agent",
-    "f5-agent": "npm run start --workspace=@flipper-agents/f5-agent"
+    "test": "npm run test --workspaces --if-present",
+    "ns-agent": "npm run start --workspace=flipperagents-ns-mcp",
+    "tmos-agent": "npm run start --workspace=flipperagents-tmos-mcp"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

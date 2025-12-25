@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { reorderConfig, analyzeConfig } from '../src/lib/config-reorder.js';
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
@@ -39,18 +39,33 @@ describe('NS Config Files', () => {
       expect(reordered.length).toBeGreaterThan(0);
     });
 
-    it('should preserve all non-empty, non-comment lines', () => {
+    it('should preserve commands after cleaning and filtering', () => {
+      // Helper to check if a line is an auto-created IP-named server
+      // Format: add server <IP> <IP> (name equals IP address)
+      const isAutoCreatedServer = (line: string): boolean => {
+        const ipv4Pattern = /^add server\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+\1(\s|$)/;
+        const ipv6Pattern = /^add server\s+([0-9a-fA-F:]+)\s+\1(\s|$)/;
+        return ipv4Pattern.test(line) || ipv6Pattern.test(line);
+      };
+
+      // Helper to clean a command (remove -devno option)
+      const cleanCommand = (line: string): string => {
+        return line.replace(/\s+-devno\s+\d+/g, '');
+      };
+
       const originalLines = content
         .split('\n')
         .map(l => l.trim())
-        .filter(l => l && !l.startsWith('#'));
+        .filter(l => l && !l.startsWith('#'))
+        .filter(l => !isAutoCreatedServer(l))  // Filter auto-created servers
+        .map(l => cleanCommand(l));            // Clean -devno options
 
       const reorderedLines = reordered
         .split('\n')
         .map(l => l.trim())
         .filter(l => l && !l.startsWith('#'));
 
-      // All original commands should be in reordered output
+      // All cleaned original commands should be in reordered output
       for (const line of originalLines) {
         expect(reorderedLines).toContain(line);
       }

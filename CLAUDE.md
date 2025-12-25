@@ -22,9 +22,9 @@ flipperAgents/
 │   │   │   │   └── config-reorder.ts # Config dependency ordering
 │   │   │   └── transports/          # Transport implementations
 │   │   │       └── http.ts          # HTTP/SSE transport
-│   │   ├── package.json             # @flipper/netscaler-mcp
+│   │   ├── package.json             # flipperagents-ns-mcp
 │   │   └── README.md
-│   └── f5/                          # F5 BIG-IP MCP server (future)
+│   └── f5/                          # TMOS MCP server (flipperagents-tmos-mcp)
 ├── tests/
 │   └── ns-configs/                  # Test NetScaler configurations
 └── docs/                            # Documentation
@@ -55,7 +55,7 @@ npm run dev
                                   │ stdio (JSON-RPC)
                                   ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  @flipper/netscaler-mcp (Our MCP Server)                        │
+│  flipperagents-ns-mcp (Our MCP Server)                        │
 │  ┌─────────────────────────────────────────────────────────────┐│
 │  │  Tools exposed:                                              ││
 │  │  • list_vservers        • backup_config                     ││
@@ -183,7 +183,7 @@ The `config-reorder.ts` module handles this automatically.
 Each MCP server is designed to be self-contained for eventual separation:
 
 - `mcp/netscaler/` → `github.com/f5devcentral/netscaler-mcp`
-- `mcp/f5/` → `github.com/f5devcentral/f5-mcp`
+- `mcp/f5/` → `github.com/f5devcentral/tmos-mcp`
 
 ---
 

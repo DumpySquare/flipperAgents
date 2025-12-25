@@ -1,18 +1,18 @@
 {
-  "name": "@flipper/f5-mcp",
+  "name": "flipperagents-tmos-mcp",
   "version": "0.1.0",
-  "description": "MCP server for F5 BIG-IP management",
+  "description": "MCP server for F5 BIG-IP/TMOS management",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "f5-mcp": "./dist/index.js"
+    "tmos-mcp": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "lint": "eslint src --ext .ts",
     "clean": "rm -rf dist"
@@ -20,6 +20,7 @@
   "keywords": [
     "mcp",
     "f5",
+    "tmos",
     "bigip",
     "load-balancer",
     "ai",
@@ -28,6 +29,7 @@
   "author": "F5 DevCentral",
   "license": "Apache-2.0",
   "dependencies": {
+    "@flipper/telemetry": "*",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "f5-conx-core": "^1.0.0"
   },

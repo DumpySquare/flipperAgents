@@ -1,4 +1,4 @@
-# NetScaler MCP Server
+# NetScaler MCP Server (flipperagents-ns-mcp)
 
 MCP (Model Context Protocol) server for managing NetScaler ADC via Claude Desktop or any MCP-compatible client.
 

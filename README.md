@@ -8,11 +8,11 @@ flipperAgents provides MCP servers that expose management tools for network load
 
 **Currently Implemented:**
 
-- **NetScaler MCP Server** - Full NITRO API and SSH support
+- **NetScaler MCP Server** (`flipperagents-ns-mcp`) - Full NITRO API and SSH support
 
 **Planned:**
 
-- F5 BIG-IP MCP Server
+- F5 BIG-IP/TMOS MCP Server (`flipperagents-tmos-mcp`)
 - F5 XC MCP Server
 - NGINX MCP Server
 
@@ -62,7 +62,7 @@ flipperAgents/
 │   │   │   │   └── config-reorder.ts # Config dependency ordering
 │   │   │   └── transports/          # Transport implementations
 │   │   └── README.md
-│   └── f5/                          # F5 BIG-IP MCP server (planned)
+│   └── f5/                          # F5 BIG-IP/TMOS MCP server
 ├── tests/
 │   └── ns-configs/                  # Test NetScaler configurations
 ├── docs/                            # Documentation
@@ -80,7 +80,7 @@ flipperAgents/
                                   │ stdio (JSON-RPC)
                                   ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  @flipper/netscaler-mcp (MCP Server)                            │
+│  flipperagents-ns-mcp (MCP Server)                              │
 │  ┌─────────────────────────────────────────────────────────────┐│
 │  │  Tools exposed:                                              ││
 │  │  • list_vservers        • deploy_config                     ││

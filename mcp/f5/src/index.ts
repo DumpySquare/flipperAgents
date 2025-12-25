@@ -22,6 +22,11 @@ import {
 
 import { F5Client } from './lib/f5-client.js';
 import { log, logToolCall } from './lib/logger.js';
+import { TelemetryClient, classifyError, setupGlobalErrorHandlers } from '@flipper/telemetry';
+
+// Initialize telemetry (singleton)
+const telemetry = new TelemetryClient('flipperagents-tmos-mcp', '0.1.0');
+setupGlobalErrorHandlers(telemetry);
 
 // Import tool definitions and handlers
 import { connectionTools, handleConnectionTool } from './tools/connection.js';
@@ -135,7 +140,7 @@ async function handleToolCallImpl(
 }
 
 /**
- * Wrapper with logging
+ * Wrapper with logging and telemetry
  */
 async function handleToolCall(
   name: string,
@@ -148,11 +153,13 @@ async function handleToolCall(
     const result = await handleToolCallImpl(name, args);
     const durationMs = Date.now() - startTime;
     logToolCall(name, args, { success: true }, durationMs);
+    telemetry.capture(name, durationMs, true);
     return result;
   } catch (error) {
     const durationMs = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : String(error);
     logToolCall(name, args, { success: false, error: errorMsg }, durationMs);
+    telemetry.capture(name, durationMs, false, classifyError(error));
     throw error;
   }
 }
@@ -163,7 +170,7 @@ async function handleToolCall(
 function createServer(): Server {
   const server = new Server(
     {
-      name: 'f5-bigip-mcp',
+      name: 'flipperagents-tmos-mcp',
       version: '0.1.0',
     },
     {
@@ -213,11 +220,18 @@ async function main(): Promise<void> {
   if (httpPort) {
     // HTTP/SSE transport mode
     log.info('Starting HTTP transport', { port: httpPort });
-    const { startHttpTransport, setToolHandler } = await import(
+    const { startHttpTransport, setToolHandler, setShutdownHandler } = await import(
       './transports/http.js'
     );
     const server = createServer();
     setToolHandler(handleToolCall);
+    // Register shutdown handler for telemetry capture
+    setShutdownHandler(async (reason: string) => {
+      log.info('Shutdown handler called', { reason });
+      telemetry.lifecycle('shutdown', { reason });
+      await telemetry.flush();
+    });
+    telemetry.lifecycle('startup', { transport: 'http', port: httpPort });
     startHttpTransport(server, httpPort);
   } else {
     // Default: stdio transport (for Claude Desktop)
@@ -228,9 +242,25 @@ async function main(): Promise<void> {
 
     log.debug('Connecting server to transport');
     await server.connect(transport);
-    log.info('F5 BIG-IP MCP server started (stdio)', { pid: process.pid });
+    log.info('TMOS MCP server started (stdio)', { pid: process.pid });
+    telemetry.lifecycle('startup', { transport: 'stdio' });
   }
 }
+
+// Shutdown handlers - capture lifecycle event before telemetry flushes
+process.on('SIGINT', async () => {
+  log.info('Received SIGINT, shutting down');
+  telemetry.lifecycle('shutdown', { reason: 'SIGINT' });
+  await telemetry.flush();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  log.info('Received SIGTERM, shutting down');
+  telemetry.lifecycle('shutdown', { reason: 'SIGTERM' });
+  await telemetry.flush();
+  process.exit(0);
+});
 
 main().catch((error) => {
   log.error('Fatal error', { error: error instanceof Error ? error.message : String(error) });

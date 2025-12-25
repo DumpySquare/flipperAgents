@@ -28,6 +28,9 @@ let toolHandler: ((name: string, args: Record<string, unknown>) => Promise<strin
 // Connection checker for /check endpoint
 let connectionChecker: (() => Promise<{ connected: boolean }>) | null = null;
 
+// Shutdown handler for graceful shutdown with telemetry
+let shutdownHandler: ((reason: string) => Promise<void>) | null = null;
+
 /**
  * Set the tool handler for direct API calls
  */
@@ -44,6 +47,15 @@ export function setConnectionChecker(
   checker: () => Promise<{ connected: boolean }>
 ): void {
   connectionChecker = checker;
+}
+
+/**
+ * Set shutdown handler for graceful shutdown with telemetry
+ */
+export function setShutdownHandler(
+  handler: (reason: string) => Promise<void>
+): void {
+  shutdownHandler = handler;
 }
 
 /**
@@ -113,6 +125,7 @@ export function startHttpTransport(mcpServer: Server, port: number): void {
             '/health': 'GET - Health check',
             '/check': 'GET - Test BIG-IP connectivity',
             '/api/call': 'POST - Direct tool invocation',
+            '/shutdown': 'POST - Graceful shutdown',
           },
         });
         return;
@@ -202,6 +215,31 @@ export function startHttpTransport(mcpServer: Server, port: number): void {
             500
           );
         }
+        return;
+      }
+
+      if (path === '/shutdown' && method === 'POST') {
+        // Graceful shutdown
+        log.info('Shutdown requested via HTTP endpoint');
+        
+        // Call shutdown handler for telemetry capture
+        if (shutdownHandler) {
+          await shutdownHandler('http_endpoint');
+        }
+        
+        sendJson(res, { status: 'shutting down' });
+        
+        // Close all SSE sessions
+        for (const transport of sessions.values()) {
+          transport.close();
+        }
+        sessions.clear();
+        
+        // Close HTTP server and exit
+        httpServer.close(() => {
+          log.info('HTTP server closed');
+          process.exit(0);
+        });
         return;
       }
 

@@ -1,4 +1,4 @@
-# F5 BIG-IP MCP Server Design Document
+# TMOS MCP Server Design Document (flipperagents-tmos-mcp)
 
 **Status:** Draft  
 **Version:** 0.3.0  
@@ -8,7 +8,7 @@
 
 ## Overview
 
-MCP (Model Context Protocol) server for managing F5 BIG-IP devices via Claude Desktop, Claude Code, or any MCP-compatible AI client. The server exposes device management, configuration parsing, and declarative deployment capabilities through a unified tool interface.
+MCP (Model Context Protocol) server for managing F5 BIG-IP/TMOS devices via Claude Desktop, Claude Code, or any MCP-compatible AI client. The server exposes device management, configuration parsing, and declarative deployment capabilities through a unified tool interface.
 
 ### Core Libraries
 

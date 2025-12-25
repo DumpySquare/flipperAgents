@@ -17,11 +17,15 @@ export type ToolHandler = (name: string, args: Record<string, unknown>) => Promi
 // Connection checker type - for health checks
 export type ConnectionChecker = () => Promise<{ nitro: boolean; ssh: boolean }>;
 
+// Shutdown handler type - for graceful shutdown with telemetry
+export type ShutdownHandler = (reason: string) => Promise<void>;
+
 const sessions = new Map<string, SSEServerTransport>();
 
 // Tool handler - set via setToolHandler()
 let toolHandler: ToolHandler | null = null;
 let connectionChecker: ConnectionChecker | null = null;
+let shutdownHandler: ShutdownHandler | null = null;
 
 export function setToolHandler(handler: ToolHandler): void {
   toolHandler = handler;
@@ -29,6 +33,10 @@ export function setToolHandler(handler: ToolHandler): void {
 
 export function setConnectionChecker(checker: ConnectionChecker): void {
   connectionChecker = checker;
+}
+
+export function setShutdownHandler(handler: ShutdownHandler): void {
+  shutdownHandler = handler;
 }
 
 // Helper to read request body
@@ -172,14 +180,22 @@ export function startHttpTransport(server: Server, port: number = 3000): void {
 
     // POST /shutdown - Graceful shutdown (for development/testing)
     if (req.method === 'POST' && url.pathname === '/shutdown') {
+      console.error('[HTTP] Shutdown requested, closing server...');
+      
+      // Call shutdown handler for telemetry capture
+      if (shutdownHandler) {
+        await shutdownHandler('http_endpoint');
+      }
+      
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ status: 'shutting down' }));
-      console.error('[HTTP] Shutdown requested, closing server...');
+      
       // Close all SSE sessions
       for (const transport of sessions.values()) {
         transport.close();
       }
       sessions.clear();
+      
       // Close HTTP server and exit
       httpServer.close(() => {
         console.error('[HTTP] Server closed');
