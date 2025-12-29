@@ -10,6 +10,8 @@ MCP (Model Context Protocol) server for managing F5 BIG-IP/TMOS devices via Clau
 - **ATC Deployment** - AS3, DO, and Telemetry Streaming declarative APIs
 - **HA Management** - Status, failover, config sync
 - **Monitoring** - Virtual/pool stats, logs, health checks
+- **Licensing** - Online and offline (air-gapped) license activation
+- **SSH Sessions** - Real-time log streaming, shell access for troubleshooting
 
 ## Installation
 
@@ -64,20 +66,32 @@ Replace `/path/to/flipperAgents` with your actual installation path.
 
 | Tool | Description |
 |------|-------------|
-| `connect` | Connect to BIG-IP device |
+| `connect` | Connect to BIG-IP device (REST API) |
 | `disconnect` | Disconnect from device |
 | `device_info` | Get device information |
 | `check_connection` | Test connectivity |
+
+### SSH Sessions (Real-time Streaming)
+
+| Tool | Description |
+|------|-------------|
+| `ssh_connect` | Establish SSH session (separate from REST) |
+| `ssh_disconnect` | Close SSH session |
+| `ssh_execute` | Run shell command via SSH |
+| `ssh_tail_start` | Start tailing a log file (background) |
+| `ssh_tail_read` | Get buffered log output |
+| `ssh_tail_stop` | Stop a tail session |
+| `ssh_tail_list` | List active tail sessions |
 
 ### Backup & Recovery
 
 | Tool | Description |
 |------|-------------|
-| `ucs_create` | Create UCS backup |
+| `ucs_create` | Create UCS backup (full system) |
 | `ucs_list` | List UCS files |
 | `ucs_download` | Download UCS file |
 | `ucs_upload` | Upload UCS file |
-| `ucs_restore` | Restore from UCS |
+| `ucs_restore` | Restore from UCS (destructive) |
 | `ucs_delete` | Delete UCS file |
 | `qkview_create` | Generate qkview diagnostic |
 | `qkview_list` | List qkview files |
@@ -87,13 +101,23 @@ Replace `/path/to/flipperAgents` with your actual installation path.
 
 | Tool | Description |
 |------|-------------|
-| `bash_execute` | Execute bash command |
+| `bash_execute` | Execute bash command (REST API) |
 | `tmsh_execute` | Execute tmsh command |
 | `config_save` | Save running config |
 | `config_merge` | Merge config snippet |
-| `reboot` | Reboot device |
-| `logs_get` | Retrieve log files |
-| `license_get` | View license info |
+| `reboot` | Reboot device (causes interruption) |
+| `logs_get` | Retrieve log files (one-shot) |
+
+### Licensing
+
+| Tool | Description |
+|------|-------------|
+| `license_get` | View current license info |
+| `license_install` | Install license (device has internet or proxy) |
+| `license_activate_airgapped` | **One-step offline activation** (device has no internet) |
+| `license_get_dossier` | Get dossier (manual offline step 1/3) |
+| `license_activate_offline` | Exchange dossier for license (manual step 2/3) |
+| `license_install_text` | Install license from text (manual step 3/3) |
 
 ### ATC Deployment
 
@@ -139,6 +163,47 @@ Once configured, you can ask Claude to manage your BIG-IP:
 - "Deploy this AS3 declaration..."
 - "What's the HA sync status?"
 
+### Real-time Log Monitoring
+
+For operations where you need to watch logs in real-time (licensing, upgrades, HA failover):
+
+```
+"Start tailing /var/log/ltm while I do a license update"
+[agent: ssh_connect → ssh_tail_start /var/log/ltm]
+
+"Activate my license"
+[agent: license_activate_airgapped]
+
+"What do the logs show?"
+[agent: ssh_tail_read → shows licensing messages]
+
+"Stop monitoring"
+[agent: ssh_tail_stop]
+```
+
+**Common log files to monitor:**
+- `/var/log/ltm` - General LTM events, licensing, mcpd
+- `/var/log/audit` - Configuration changes, logins
+- `/var/log/liveinstall` - Software installation progress
+- `/var/log/ts/bd.log` - ASM/WAF events
+
+### Offline Licensing (Air-Gapped BIG-IP)
+
+For BIG-IP devices without internet access, use the **one-step** orchestrated tool:
+
+```
+"Activate license XXXXX-XXXXX-XXXXX-XXXXX-XXXXXXX on my air-gapped BIG-IP"
+```
+
+The `license_activate_airgapped` tool handles everything:
+1. Gets dossier from BIG-IP
+2. Fetches EULA from activate.f5.com (via MCP server)
+3. Submits dossier + EULA to get license
+4. Installs license on BIG-IP
+5. Verifies activation
+
+The MCP server (running on a machine with internet) proxies the SOAP call to F5's license server.
+
 ### HTTP Mode (Development)
 
 For development and testing, run with HTTP transport:
@@ -157,6 +222,18 @@ Then access:
 
 - `@modelcontextprotocol/sdk` - MCP SDK
 - `f5-conx-core` - F5 device connectivity library
+- `ssh2` - SSH client for shell access
+
+## Documentation
+
+- [SPEC.md](SPEC.md) - Design document and implementation phases
+- [REFERENCE.md](REFERENCE.md) - External references, API patterns, and gotchas
+
+### External References
+
+- [F5 Ansible Collection](https://github.com/F5Networks/f5-ansible) - Reference implementation for iControl REST patterns
+- [F5 CloudDocs](https://clouddocs.f5.com/) - Official API and CLI documentation
+- [TMSH Reference](https://clouddocs.f5.com/cli/tmsh-reference/latest/) - CLI command reference
 
 ## License
 

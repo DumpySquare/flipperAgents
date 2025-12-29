@@ -59,7 +59,7 @@ export class TeemTransport implements TelemetryTransport {
     const now = new Date();
 
     const payload: TeemPayload = {
-      documentType: 'F5 MCP Telemetry Data',
+      documentType: 'FlipperAgents MCP Telemetry Data',
       documentVersion: '1',
       digitalAssetId: this.context.instanceId,
       digitalAssetName: this.context.packageName,

@@ -10,14 +10,29 @@ import type { F5Client } from '../lib/f5-client.js';
 export const connectionTools: Tool[] = [
   {
     name: 'connect',
-    description:
-      'Connect to a BIG-IP device and discover its capabilities. Returns device info including version, platform, and HA status. Required before other operations if not using environment variables.',
+    description: `Connect to a BIG-IP device and establish a management session.
+
+This is the FIRST tool to use when working with a BIG-IP. It:
+- Authenticates and creates a session token
+- Discovers device capabilities (version, modules, HA state)
+- Returns device info for planning subsequent operations
+
+If F5_HOST, F5_USERNAME, F5_PASSWORD env vars are set, connection 
+happens automatically - this tool is only needed to connect to a 
+different device or reconnect.
+
+Returns: hostname, version, platform, serial number, HA status, licensed modules.
+
+Related tools:
+- device_info: Get device details after connecting
+- check_connection: Verify connectivity without full connect
+- disconnect: Release session when done`,
     inputSchema: {
       type: 'object',
       properties: {
         host: {
           type: 'string',
-          description: 'BIG-IP hostname or IP address',
+          description: 'BIG-IP hostname or IP address (management interface)',
         },
         username: {
           type: 'string',
@@ -37,7 +52,17 @@ export const connectionTools: Tool[] = [
   },
   {
     name: 'disconnect',
-    description: 'Disconnect from the current BIG-IP device and release the session.',
+    description: `Disconnect from the current BIG-IP and release the session.
+
+Use when:
+- Switching to a different BIG-IP device
+- Cleaning up after operations complete
+- Troubleshooting connection issues (disconnect then reconnect)
+
+The session token is invalidated on the BIG-IP side.
+
+Related tools:
+- connect: Establish new connection`,
     inputSchema: {
       type: 'object',
       properties: {},
@@ -45,8 +70,26 @@ export const connectionTools: Tool[] = [
   },
   {
     name: 'device_info',
-    description:
-      'Get detailed information about the connected BIG-IP device including version, platform, hostname, serial number, and HA state.',
+    description: `Get detailed information about the connected BIG-IP.
+
+Returns:
+- Version and build info
+- Platform (hardware model or VE)
+- Hostname and management IP
+- Serial number
+- HA state (standalone, active, standby)
+- Licensed modules
+
+Use for:
+- Verifying you're connected to the correct device
+- Checking version before upgrades
+- Confirming HA state before changes
+- Inventory/documentation
+
+Related tools:
+- check_connection: Quick connectivity test
+- ha_status: Detailed HA information
+- license_get: Full license details`,
     inputSchema: {
       type: 'object',
       properties: {},
@@ -54,8 +97,20 @@ export const connectionTools: Tool[] = [
   },
   {
     name: 'check_connection',
-    description:
-      'Test connectivity to BIG-IP. Returns connection status and latency. Use this to verify the device is reachable before operations.',
+    description: `Test connectivity to the BIG-IP and measure latency.
+
+Use for:
+- Quick health check before operations
+- Verifying network connectivity
+- Measuring response time
+- Confirming device is responsive
+
+Returns connection status, latency in ms, and basic device info.
+Does NOT establish a new session - just tests existing connection.
+
+Related tools:
+- connect: Establish connection if not connected
+- device_info: Full device details`,
     inputSchema: {
       type: 'object',
       properties: {},

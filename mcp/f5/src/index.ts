@@ -35,6 +35,7 @@ import { systemTools, handleSystemTool } from './tools/system.js';
 import { deploymentTools, handleDeploymentTool } from './tools/deployment.js';
 import { haTools, handleHaTool } from './tools/ha.js';
 import { monitoringTools, handleMonitoringTool } from './tools/monitoring.js';
+import { sshTools, handleSSHTool } from './tools/ssh.js';
 
 // Combine all tools
 const tools = [
@@ -44,6 +45,7 @@ const tools = [
   ...deploymentTools,
   ...haTools,
   ...monitoringTools,
+  ...sshTools,
 ];
 
 // Tool name to category mapping
@@ -54,9 +56,13 @@ systemTools.forEach((t) => (toolCategories[t.name] = 'system'));
 deploymentTools.forEach((t) => (toolCategories[t.name] = 'deployment'));
 haTools.forEach((t) => (toolCategories[t.name] = 'ha'));
 monitoringTools.forEach((t) => (toolCategories[t.name] = 'monitoring'));
+sshTools.forEach((t) => (toolCategories[t.name] = 'ssh'));
 
 // Global client instance
 let f5Client: F5Client | null = null;
+
+// Store REST connection info for SSH default credentials
+let restConnectionInfo: { host?: string; password?: string } = {};
 
 /**
  * Initialize client from environment variables if configured
@@ -67,6 +73,10 @@ async function initClientFromEnv(): Promise<void> {
 
   if (host && password) {
     log.info('Initializing F5 client from environment variables', { host });
+    
+    // Store for SSH
+    restConnectionInfo = { host, password };
+    
     f5Client = new F5Client({
       host,
       username: process.env.F5_USER || 'admin',
@@ -104,6 +114,13 @@ function getClient(): F5Client {
  */
 function setClient(client: F5Client | null): void {
   f5Client = client;
+  // Update REST connection info when client changes
+  if (client) {
+    restConnectionInfo = {
+      host: client.getHost(),
+      password: client.getPassword(),
+    };
+  }
 }
 
 /**
@@ -118,6 +135,11 @@ async function handleToolCallImpl(
   // Connection tools can work without existing connection
   if (category === 'connection') {
     return handleConnectionTool(name, args, f5Client!, setClient);
+  }
+
+  // SSH tools use their own connection
+  if (category === 'ssh') {
+    return handleSSHTool(name, args, restConnectionInfo.host, restConnectionInfo.password);
   }
 
   // All other tools require an active connection

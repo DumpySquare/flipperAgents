@@ -31,10 +31,12 @@
   "dependencies": {
     "@flipper/telemetry": "*",
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "f5-conx-core": "^1.0.0"
+    "f5-conx-core": "^1.0.0",
+    "ssh2": "^1.15.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@types/ssh2": "^1.15.0",
     "typescript": "^5.3.0",
     "vitest": "^2.0.0"
   },

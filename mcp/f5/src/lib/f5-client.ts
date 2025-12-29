@@ -136,6 +136,20 @@ export class F5Client {
   }
 
   /**
+   * Get connection host (for SSH default)
+   */
+  getHost(): string {
+    return this.config.host;
+  }
+
+  /**
+   * Get connection password (for SSH default)
+   */
+  getPassword(): string | undefined {
+    return this.config.password;
+  }
+
+  /**
    * Get the underlying f5-conx-core client
    */
   getClient(): CoreF5Client {

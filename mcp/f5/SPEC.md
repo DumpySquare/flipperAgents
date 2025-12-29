@@ -37,6 +37,7 @@ MCP (Model Context Protocol) server for managing F5 BIG-IP/TMOS devices via Clau
 6. [Multi-Device Support](#6-multi-device-support)
 7. [Implementation Notes](#7-implementation-notes)
 8. [Implementation Phases](#8-implementation-phases)
+9. [MCP Resources](#9-mcp-resources-documentation-for-ai-agents)
 
 ---
 
@@ -146,7 +147,10 @@ mcp/f5/
 | `config_merge` | Merge config snippet | bash: `tmsh load sys config merge` |
 | `reboot` | Reboot device | bash: `tmsh reboot` or API |
 | `license_get` | View current license | API: `/mgmt/tm/sys/license` |
-| `license_install` | Install license | API |
+| `license_install` | Install/reactivate license | tmsh or SOAPLicenseClient (proxy) |
+| `license_get_dossier` | Get dossier for offline activation | bash: `get_dossier -b <key>` |
+| `license_activate_offline` | Exchange dossier for license | SOAP to activate.f5.com |
+| `license_install_text` | Install license from text | Write to `/config/bigip.license` + reloadlic |
 
 ### 2.4 Image Management
 
@@ -594,6 +598,50 @@ No library extensions are required. All "new" tools are wrappers around existing
 
 ---
 
+## 9. MCP Resources (Documentation for AI Agents)
+
+The MCP protocol supports exposing documentation as **resources** that AI agents can fetch on-demand, rather than embedding all context in tool descriptions.
+
+### Proposed Resources
+
+| URI | Description |
+|-----|-------------|
+| `tmos://docs/licensing` | Licensing procedures, proxy workarounds, common issues |
+| `tmos://docs/ha` | HA operations reference (failover, sync, status) |
+| `tmos://docs/upgrade` | Software upgrade procedures |
+| `tmos://docs/backup` | UCS backup/restore best practices |
+| `tmos://schema/as3` | AS3 schema summary and common patterns |
+| `tmos://schema/do` | DO schema summary |
+
+### Implementation
+
+Add to server capabilities:
+
+```typescript
+capabilities: {
+  tools: {},
+  resources: {
+    listChanged: true,
+  },
+}
+```
+
+Resources can be:
+- **Static:** Bundled markdown files with curated documentation
+- **Dynamic:** Fetched from F5 CloudDocs on-demand
+- **Generated:** Schema summaries generated from AS3/DO schemas
+
+### Benefits
+
+1. **Reduced tool description bloat** - Tool descriptions stay focused on parameters
+2. **On-demand context** - AI fetches docs only when needed
+3. **Updateable** - Docs can be updated without changing tool schemas
+4. **Discoverability** - AI can list available resources and choose relevant ones
+
+See [REFERENCE.md](REFERENCE.md) for external documentation links and implementation notes.
+
+---
+
 ## Dependencies
 
 ```json
@@ -667,6 +715,49 @@ export F5_TEEM_ENABLED=false
 ---
 
 ## Changelog
+
+### 0.5.2 (2024-12-29)
+
+- Added SSH session support for real-time log streaming:
+  - `ssh_connect` - Establish SSH session (separate from REST)
+  - `ssh_disconnect` - Close SSH session
+  - `ssh_execute` - Run shell commands via SSH
+  - `ssh_tail_start` - Start background log tailing
+  - `ssh_tail_read` - Get buffered log output
+  - `ssh_tail_stop` - Stop tail session
+  - `ssh_tail_list` - List active sessions
+- New `src/lib/ssh-client.ts` module using ssh2 library
+- SSH credentials default to REST connection (root user, same password)
+- Use case: Monitor logs during license updates, upgrades, HA failover
+
+### 0.5.1 (2024-12-29)
+
+- Added `license_activate_airgapped` orchestrated tool for one-step offline licensing
+  - Handles entire workflow: dossier → EULA → license → install → verify
+  - Recommended over manual multi-step approach
+- Enhanced all tool descriptions with:
+  - Use cases ("Use for: ...")
+  - Related tools with cross-references
+  - Pre-requisites and checklists for destructive operations
+  - Workflow context for multi-step operations
+- Manual licensing tools now reference the orchestrated tool as preferred approach
+
+### 0.5.0 (2024-12-29)
+
+- Added offline/air-gapped licensing support:
+  - `license_get_dossier` - Get dossier from BIG-IP
+  - `license_activate_offline` - MCP proxies to activate.f5.com SOAP API
+  - `license_install_text` - Install license from text
+  - New `src/lib/licensing.ts` module for SOAP activation
+- Added `license_install` tool with automatic proxy detection
+  - Uses tmsh for direct internet access
+  - Uses SOAPLicenseClient when proxy_host is specified (tmsh ignores proxy db vars)
+- Added Section 9: MCP Resources for AI agent documentation
+- Created REFERENCE.md with external references and gotchas
+- Added F5 Ansible collection as reference implementation
+- Documented licensing gotchas (SOAPLicenseClient, proxy issues)
+- Added REST vs tmsh decision matrix
+- Added proposed resource URIs for on-demand documentation
 
 ### 0.4.0 (2024-12-23)
 
