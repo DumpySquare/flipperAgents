@@ -371,6 +371,7 @@ Related tools:
       required: ['license_text'],
     },
   },
+
 ];
 
 export async function handleSystemTool(

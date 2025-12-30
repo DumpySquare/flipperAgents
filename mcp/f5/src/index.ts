@@ -36,6 +36,7 @@ import { deploymentTools, handleDeploymentTool } from './tools/deployment.js';
 import { haTools, handleHaTool } from './tools/ha.js';
 import { monitoringTools, handleMonitoringTool } from './tools/monitoring.js';
 import { sshTools, handleSSHTool } from './tools/ssh.js';
+import { as3DriftTools, handleAs3DriftTool } from './tools/as3-drift.js';
 
 // Combine all tools
 const tools = [
@@ -46,6 +47,7 @@ const tools = [
   ...haTools,
   ...monitoringTools,
   ...sshTools,
+  ...as3DriftTools,
 ];
 
 // Tool name to category mapping
@@ -57,12 +59,16 @@ deploymentTools.forEach((t) => (toolCategories[t.name] = 'deployment'));
 haTools.forEach((t) => (toolCategories[t.name] = 'ha'));
 monitoringTools.forEach((t) => (toolCategories[t.name] = 'monitoring'));
 sshTools.forEach((t) => (toolCategories[t.name] = 'ssh'));
+as3DriftTools.forEach((t) => (toolCategories[t.name] = 'as3-drift'));
 
 // Global client instance
 let f5Client: F5Client | null = null;
 
 // Store REST connection info for SSH default credentials
 let restConnectionInfo: { host?: string; password?: string } = {};
+
+// Store server reference for progress notifications
+let mcpServer: Server | null = null;
 
 /**
  * Initialize client from environment variables if configured
@@ -156,6 +162,8 @@ async function handleToolCallImpl(
       return handleHaTool(name, args, client);
     case 'monitoring':
       return handleMonitoringTool(name, args, client);
+    case 'as3-drift':
+      return handleAs3DriftTool(name, args, client, mcpServer || undefined);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -201,6 +209,9 @@ function createServer(): Server {
       },
     }
   );
+
+  // Store server reference for progress notifications
+  mcpServer = server;
 
   // List available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => ({

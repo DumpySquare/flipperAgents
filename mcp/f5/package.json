@@ -32,6 +32,7 @@
     "@flipper/telemetry": "*",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "f5-conx-core": "^1.0.0",
+    "f5-corkscrew": "^1.5.0",
     "ssh2": "^1.15.0"
   },
   "devDependencies": {

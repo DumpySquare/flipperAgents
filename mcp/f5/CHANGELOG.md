@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Progress reporting for long-running operations**
+  - New `src/lib/progress.ts` module with `ProgressTracker` class
+  - Emits MCP `notifications/progress` during extraction and dry-run
+  - Step-by-step progress: Connecting → Creating mini-UCS → Downloading → Parsing → Filtering → Complete
+  - Includes operation IDs and duration tracking
+- **Enhanced dry-run response parsing**
+  - Field-level change detection with impact assessment (high/medium/low)
+  - Impact levels: HIGH (traffic routing), MEDIUM (session handling), LOW (metadata)
+  - Structured `PlannedChange` objects with object paths and summaries
+  - Raw response included for debugging
+- AS3 Drift Detection tool group
+  - `extract_tenant_config` - Extract live config via mini-UCS + corkscrew
+  - `convert_to_as3` - Convert extracted config to AS3 declaration
+  - `parse_as3_declaration` - Validate AS3 declaration structure
+  - `validate_as3` - Schema validation
+  - `dry_run_as3` - Test declaration without applying
 - SSH session support for real-time log streaming
   - `ssh_connect` - Establish SSH session (separate from REST)
   - `ssh_disconnect` - Close SSH session
@@ -24,8 +40,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `license_install` with automatic proxy detection
 - New `src/lib/ssh-client.ts` module using ssh2 library
 - New `src/lib/licensing.ts` module for SOAP activation
+- New `src/tools/as3-drift.ts` module using f5-corkscrew
 - REFERENCE.md with external references, API patterns, and gotchas
 - MCP Resources section in SPEC.md for AI agent documentation
+
+### Fixed
+
+- `extract_tenant_config` partition filter now correctly uses `app.partition` property instead of parsing partition from app name (2025-12-29)
+- `dry_run_as3` now uses correct AS3 3.30+ parameter `controls.dryRun=true` instead of deprecated `dry-run=true` (2025-12-29)
+
+### Tested
+
+- AS3 Drift Detection complete end-to-end testing on bigip-tparty05.benlab.io (2025-12-29)
+  - All 5 tools validated: `extract_tenant_config`, `convert_to_as3`, `parse_as3_declaration`, `validate_as3`, `dry_run_as3`
+  - Both "no changes" and "with changes" scenarios verified
+  - TESTING.md updated to use `tmsh_execute` instead of non-existent `config_get` tool
 
 ### Changed
 
